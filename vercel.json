@@ -3,17 +3,22 @@
   "builds": [
     {
       "src": "api/*.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "zeroConfig": false } # Optional: can increase size
+    },
+    {
+      "src": "templates/**/*.html", # Include all HTML files in templates and its subdirectories
+      "use": "@vercel/static-build" # This is a placeholder, usually handled by Flask within the Python build
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",  # This will match /api/events, /api/something, etc.
-      "dest": "/api/index.py" # And route ALL of them to api/index.py
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
     },
     {
-      "src": "/(.*)",       # This is for the root path and any other non-/api paths
-      "dest": "api/index.py"
+      "src": "/(.*)",
+      "dest": "/api/index.py"
     }
   ]
 }
