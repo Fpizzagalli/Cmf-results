@@ -8,11 +8,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/(.*)",  # This will match /api/events, /api/something, etc.
+      "dest": "/api/index.py" # And route ALL of them to api/index.py
     },
     {
-      "src": "/(.*)",
+      "src": "/(.*)",       # This is for the root path and any other non-/api paths
       "dest": "api/index.py"
     }
   ]
