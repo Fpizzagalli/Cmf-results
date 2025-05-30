@@ -1,9 +1,17 @@
 # api/index.py
-from flask import Flask, jsonify, render_template # <-- Import render_template
+from flask import Flask, jsonify, render_template # Ensure render_template is imported
 from cmf_scraper import get_financial_events
-import os
+import os # <-- Import os
 
-app = Flask(__name__)
+# Get the directory of the current file (index.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Define the path to the templates folder, assuming it's one level up from api/
+# Use os.path.normpath to handle potential double slashes correctly
+TEMPLATE_DIR = os.path.normpath(os.path.join(BASE_DIR, '..', 'templates')) # <-- Define template path
+
+# Initialize Flask app, telling it where to find templates
+app = Flask(__name__, template_folder=TEMPLATE_DIR) # <-- Pass template_folder argument
 
 @app.route('/')
 def home():
@@ -17,17 +25,13 @@ def events_api():
         events = get_financial_events()
         print(f"Scraped {len(events)} events successfully.")
         
-        # Ensure 'templates' folder exists at the root level relative to where vercel runs the function
-        # Flask will look for templates/calendario.html
         return render_template("calendario.html", scrapedEventsData=events)
         
     except Exception as e:
         print(f"Error in /api/events endpoint: {e}")
-        # Return a proper error response for the client
+        # Make sure to return the error with a 500 status code
         return jsonify({"error": "An internal server error occurred", "details": str(e)}), 500
 
-# This `if __name__ == "__main__":` block only runs when you execute the script directly,
-# not when Vercel runs it as a serverless function.
-# You can keep it for local testing if you run `python api/index.py`
+# This block is for local development only and will not run on Vercel
 if __name__ == "__main__":
     app.run(debug=True)
