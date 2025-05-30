@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Entrega EEFF - Chile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .event-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .day-column-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .day-column-content::-webkit-scrollbar-thumb {
+            background-color: #9ca3af;
+            border-radius: 3px;
+        }
+        .day-column-content::-webkit-scrollbar-track {
+            background-color: #e5e7eb;
+        }
+        .nav-button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .nav-button:hover {
+            background-color: #4338ca;
+        }
+        .nav-button-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .nav-button-secondary:hover {
+            background-color: #d1d5db;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+<div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+    <header class="mb-6 md:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-2 text-center sm:text-left">Calendario de Entrega de Estados Financieros</h1>
+        <p class="text-sm text-gray-500 mb-4 text-center sm:text-left">
+            Eventos basados en fechas límite de envío a la CMF.
+            <span class="block sm:inline mt-1 sm:mt-0"><strong>Nota:</strong> Datos extraídos automáticamente desde la CMF.</span>
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 p-4 bg-white rounded-lg shadow">
+            <div class="flex items-center gap-2">
+                <button id="prevWeekBtn" class="nav-button">&lt; Semana Ant.</button>
+                <button id="todayBtn" class="nav-button nav-button-secondary">Hoy</button>
+                <button id="nextWeekBtn" class="nav-button">Semana Sig. &gt;</button>
+            </div>
+            <div id="currentWeekDisplay" class="text-lg font-semibold text-indigo-600 mt-2 sm:mt-0"></div>
+        </div>
+    </header>
+
+    <main id="calendarGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4"></main>
+    <div id="noEventsMessage" class="hidden text-center text-gray-500 py-10">
+        No hay eventos programados para esta semana.
+    </div>
+</div>
+
+<script>
+    function getYYYYMMDD(date) {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = ('0' + (d.getMonth() + 1)).slice(-2);
+        const day = ('0' + d.getDate()).slice(-2);
+        return `${year}-${month}-${day}`;
+    }
+
+    const scrapedEventsData = {{ scrapedEventsData | tojson }};
+
+    let currentDate = new Date();
+    const calendarGrid = document.getElementById('calendarGrid');
+    const currentWeekDisplay = document.getElementById('currentWeekDisplay');
+    const prevWeekBtn = document.getElementById('prevWeekBtn');
+    const nextWeekBtn = document.getElementById('nextWeekBtn');
+    const todayBtn = document.getElementById('todayBtn');
+    const noEventsMessage = document.getElementById('noEventsMessage');
+
+    function formatDate(date, options = { weekday: 'short', day: 'numeric', month: 'short' }) {
+        return date.toLocaleDateString('es-CL', options);
+    }
+
+    function getWeekStartDate(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    function renderCalendar() {
+        calendarGrid.innerHTML = '';
+        noEventsMessage.classList.add('hidden');
+
+        const today = new Date();
+        const todayYYYYMMDD = getYYYYMMDD(today);
+        const weekStart = getWeekStartDate(new Date(currentDate));
+        const weekDates = [];
+
+        for (let i = 0; i < 5; i++) {
+            const dayDate = new Date(weekStart);
+            dayDate.setDate(weekStart.getDate() + i);
+            weekDates.push(dayDate);
+        }
+
+        const weekStartFormatted = formatDate(weekDates[0], { day: 'numeric', month: 'long' });
+        const weekEndFormatted = formatDate(weekDates[4], { day: 'numeric', month: 'long', year: 'numeric' });
+        currentWeekDisplay.textContent = `${weekStartFormatted} - ${weekEndFormatted}`;
+
+        let totalEventsThisWeek = 0;
+
+        weekDates.forEach(dayDate => {
+            const dayDateYYYYMMDD = getYYYYMMDD(dayDate);
+            const dayName = formatDate(dayDate, { weekday: 'long' });
+            const dayNumber = dayDate.getDate();
+            const monthShort = formatDate(dayDate, { month: 'short' });
+
+            const eventsForDay = scrapedEventsData.filter(event => event.fechaEnvioLimite === dayDateYYYYMMDD && event.estado === "Vigente");
+            totalEventsThisWeek += eventsForDay.length;
+
+            const dayColumn = document.createElement('div');
+            dayColumn.className = `day-column bg-white rounded-lg shadow p-3 md:p-4 flex flex-col ${dayDateYYYYMMDD === todayYYYYMMDD ? 'border-2 border-indigo-500' : 'border border-gray-200'}`;
+
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-header mb-3 pb-2 border-b border-gray-200';
+            dayHeader.innerHTML = `
+                <h3 class="font-semibold text-gray-700 capitalize">${dayName}</h3>
+                <p class="text-sm text-gray-500">${dayNumber} ${monthShort}</p>
+            `;
+            dayColumn.appendChild(dayHeader);
+
+            const eventsList = document.createElement('div');
+            eventsList.className = 'day-column-content flex-grow space-y-2 overflow-y-auto max-h-96';
+
+            if (eventsForDay.length > 0) {
+                eventsForDay.forEach(event => {
+                    const eventCard = document.createElement('div');
+                    eventCard.className = 'event-card bg-indigo-50 border border-indigo-200 p-2.5 rounded-md shadow-sm';
+                    eventCard.innerHTML = `
+                        <h4 class="font-semibold text-sm text-indigo-700">${event.nombreEmisor}</h4>
+                        
+                      
+                    `;
+                    eventsList.appendChild(eventCard);
+                });
+            } else {
+                eventsList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Sin eventos</p>';
+            }
+            dayColumn.appendChild(eventsList);
+            calendarGrid.appendChild(dayColumn);
+        });
+
+        if (totalEventsThisWeek === 0) {
+            noEventsMessage.classList.remove('hidden');
+        }
+    }
+
+    prevWeekBtn.addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() - 7);
+        renderCalendar();
+    });
+
+    nextWeekBtn.addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() + 7);
+        renderCalendar();
+    });
+
+    todayBtn.addEventListener('click', () => {
+        currentDate = new Date();
+        renderCalendar();
+    });
+
+    renderCalendar();
+</script>
+</body>
+</html>
