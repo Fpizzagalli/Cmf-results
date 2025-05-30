@@ -11,7 +11,10 @@ def home():
 @app.route('/api/events')
 def events_api():
     events = get_financial_events()
-    return jsonify(events)
+    return render_template("calendario.html", scrapedEventsData=events)
+    #return jsonify(events)
+if __name__ == "__main__":
+    app.run(debug=True)
 
 # Vercel requires a `handler` or `app` variable. For Flask, it's `app`.
 # For a simple HTTP handler (without Flask/Django), you'd define `handler`.
