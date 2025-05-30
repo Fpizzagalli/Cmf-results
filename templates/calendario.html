@@ -152,8 +152,7 @@
                     eventCard.className = 'event-card bg-indigo-50 border border-indigo-200 p-2.5 rounded-md shadow-sm';
                     eventCard.innerHTML = `
                         <h4 class="font-semibold text-sm text-indigo-700">${event.nombreEmisor}</h4>
-                        
-                      
+                        <p class="text-xs text-gray-600 mt-1">${event.tipoEEFF}</p>
                     `;
                     eventsList.appendChild(eventCard);
                 });

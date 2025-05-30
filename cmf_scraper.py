@@ -45,15 +45,6 @@ def get_financial_events():
         print("No tables found on the page.")
 
     for table in tables:
-        # Debugging table content:
-        # print("Table content preview:")
-        # print(table.prettify())
-
-        # Assuming the first row of the table has headers if they exist
-        # headers = [th.get_text(strip=True) for th in table.find_all('th')]
-        # if headers:
-        #     print(f"Found table with headers: {headers}")
-
         for row in table.find_all('tr'):
             cells = row.find_all('td')
             if not cells:
@@ -82,15 +73,25 @@ def get_financial_events():
                     print(f"Skipping row due to insufficient data (expected at least 3 cells for meaningful data): {row_data}")
                     continue
 
-                event = {
-                    "rut": row_data[1],
-                    "nombreEmisor": row_data[0],
-                    "tipoEEFF": "N/A", # Placeholder, as it's not clearly extracted from the example output
-                    "fechaEnvioLimite": format_date(row_data[2]),
-                    "estado": "Vigente"
-                }
-                events.append(event)
-                # print(f"Added event: {event}") # Uncomment to see each added event
+                # Extract all relevant date columns (indices 2, 3, 4, 5, 6)
+                date_columns = [
+                    (2, '1Q'),
+                    (3, '2Q'),
+                    (4, '3Q'),
+                    (5, '4Q'),
+                ]
+                for idx, tipo in date_columns:
+                    if len(row_data) > idx:
+                        date_val = format_date(row_data[idx])
+                        if date_val:  # Only add event if date is valid
+                            event = {
+                                "rut": row_data[1],
+                                "nombreEmisor": row_data[0],
+                                "tipoEEFF": tipo,
+                                "fechaEnvioLimite": date_val,
+                                "estado": "Vigente"
+                            }
+                            events.append(event)
             except IndexError:
                 print(f"IndexError processing row: {row_data}. Likely incorrect indexing for expected columns.")
                 continue
