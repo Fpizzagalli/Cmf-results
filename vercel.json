@@ -3,12 +3,7 @@
   "builds": [
     {
       "src": "api/*.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "zeroConfig": false } # Optional: can increase size
-    },
-    {
-      "src": "templates/**/*.html", # Include all HTML files in templates and its subdirectories
-      "use": "@vercel/static-build" # This is a placeholder, usually handled by Flask within the Python build
+      "use": "@vercel/python"
     }
   ],
   "routes": [
