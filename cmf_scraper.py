@@ -3,19 +3,14 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 def format_date(date_str):
-    # Handle the hyphen case first
     if date_str == "-":
-        return "" # Or None, depending on how your calendar expects missing dates
-
-    # Try DD/MM/YYYY format first
+        return "" 
     try:
         return datetime.strptime(date_str, "%d/%m/%Y").strftime("%Y-%m-%d")
     except ValueError:
-        # If that fails, try DD-MM-YYYY format
         try:
             return datetime.strptime(date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
         except ValueError:
-            # If both fail, print a warning and return empty string
             print(f"Could not parse date: {date_str}. Returning empty string.")
             return ""
 
@@ -48,32 +43,17 @@ def get_financial_events():
         for row in table.find_all('tr'):
             cells = row.find_all('td')
             if not cells:
-                continue
-            
+                continue            
             row_data = [cell.get_text(strip=True) for cell in cells]
-            
-            # This print is useful for seeing raw row data
-            # print(f"Raw row data: {row_data}") 
-
             if not row_data:
                 continue
-
-            # This check for "fondo" might need adjustment if row_data[0] is not always the first relevant text field
             if "fondo" in row_data[0].lower():
                 continue
-
             try:
-                # Based on your output:
-                # row_data[0] seems to be 'nombreEmisor' (e.g., 'ABC S.A.')
-                # row_data[1] seems to be 'rut' (e.g., '96874030-K')
-                # row_data[2] seems to be 'fechaEnvioLimite' (e.g., '30/05/2025')
-                # The 'tipoEEFF' seems to be missing or needs further investigation.
-
                 if len(row_data) < 3:
                     print(f"Skipping row due to insufficient data (expected at least 3 cells for meaningful data): {row_data}")
                     continue
-
-                # Extract all relevant date columns (indices 2, 3, 4, 5, 6)
+        # Extract only the valid columns
                 date_columns = [
                     (2, '1Q'),
                     (3, '2Q'),
@@ -83,7 +63,7 @@ def get_financial_events():
                 for idx, tipo in date_columns:
                     if len(row_data) > idx:
                         date_val = format_date(row_data[idx])
-                        if date_val:  # Only add event if date is valid
+                        if date_val:  
                             event = {
                                 "rut": row_data[1],
                                 "nombreEmisor": row_data[0],
@@ -107,7 +87,7 @@ if __name__ == "__main__":
     
     if all_events:
         print(f"\nSuccessfully scraped {len(all_events)} financial events:")
-        for i, event in enumerate(all_events[:10]): # Print more to see better
+        for i, event in enumerate(all_events[:10]):
             print(f"  Event {i+1}: {event}")
         if len(all_events) > 10:
             print("  (and more...)")
